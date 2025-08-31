@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guia Completo de Configuração NGINX</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .navbar-brand {
+            font-weight: bold;
+        }
+        .card {
+            margin-bottom: 1.5rem;
+        }
+        pre {
+            background-color: #282c34;
+            color: #abb2bf;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        code {
+            color: #e06c75;
+        }
+        .nav-pills .nav-link {
+            background-color: #e9ecef;
+            color: #495057;
+            margin-bottom: 5px;
+        }
+        .nav-pills .nav-link.active {
+            background-color: #0d6efd;
+        }
+        .list-group-item-action {
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="#">Guia NGINX</a>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="p-5 mb-4 bg-light rounded-3 text-center">
+            <h1 class="display-4">Guia Completo para Configurar seu Site com NGINX</h1>
+            <p class="lead">Desde a instalação básica até a hospedagem de múltiplos sites com PHP-FPM.</p>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-3">
+                <div class="card position-sticky" style="top: 80px;">
+                    <div class="card-header">
+                        <strong>Navegação</strong>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        <a href="#introducao" class="list-group-item list-group-item-action">O que é NGINX?</a>
+                        <a href="#instalacao" class="list-group-item list-group-item-action">Instalação</a>
+                        <a href="#configuracao" class="list-group-item list-group-item-action">Configuração de Múltiplos Sites</a>
+                        <a href="#finalizacao" class="list-group-item list-group-item-action">Finalização e Testes</a>
+                        <a href="#logs" class="list-group-item list-group-item-action">Gerenciamento de Logs</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-9">
+                <main>
+                    <section id="introducao" class="card">
+                        <div class="card-body">
+                            <h2 class="card-title">O que é o NGINX?</h2>
+                            <p>O NGINX é um servidor web e proxy reverso de código aberto, amplamente utilizado por sua alta performance, baixo consumo de recursos e habilidade de lidar com milhares de conexões simultâneas usando pouca memória.</p>
+                            <p>Além de servir páginas estáticas, ele funciona perfeitamente integrado ao PHP-FPM para processar aplicações dinâmicas, tornando-o uma escolha robusta e escalável para qualquer projeto web.</p>
+                        </div>
+                    </section>
+
+                    <section id="instalacao" class="card">
+                        <div class="card-body">
+                            <h2 class="card-title">Passo 1: Instalação no Ubuntu/Debian</h2>
+                            <p>O primeiro passo é garantir que seu sistema esteja com os pacotes atualizados.</p>
+                            <pre><code>sudo apt update && sudo apt upgrade -y</code></pre>
+
+                            <h4 class="mt-4">Instalando o NGINX</h4>
+                            <p>Com o sistema atualizado, instale o pacote do NGINX.</p>
+                            <pre><code>sudo apt install nginx -y</code></pre>
+                            <p>Verifique se o serviço está ativo e rodando corretamente.</p>
+                            <pre><code>sudo systemctl status nginx</code></pre>
+                            <p>Você também pode confirmar a instalação abrindo seu navegador e acessando <code>http://localhost</code>. Uma página de boas-vindas do NGINX deve ser exibida.</p>
+
+                            <h4 class="mt-4">Instalando o PHP-FPM</h4>
+                            <p>Para sites dinâmicos com PHP, instale o PHP-FPM (FastCGI Process Manager).</p>
+                            <pre><code>sudo apt install php-fpm -y</code></pre>
+                            <p>Após a instalação, verifique se o serviço do PHP-FPM está ativo.</p>
+                            <pre><code>sudo systemctl status php*-fpm</code></pre>
+                        </div>
+                    </section>
+
+                    <section id="configuracao" class="card">
+                        <div class="card-body">
+                            <h2 class="card-title">Passo 2: Configuração para Múltiplos Sites</h2>
+                            <p>A prática recomendada é criar arquivos de configuração separados para cada site em <code>/etc/nginx/sites-available/</code>.</p>
+
+                            <h4 class="mt-4">1. Crie os diretórios para os sites</h4>
+                            <p>Crie uma pasta para cada site que você irá hospedar.</p>
+                            <pre><code>sudo mkdir -p /var/www/meusite1.com
+sudo mkdir -p /var/www/meusite2.com</code></pre>
+                            
+                            <h4 class="mt-4">2. Defina as permissões corretas</h4>
+                            <p>Garanta que o usuário do NGINX (<code>www-data</code>) tenha permissão para ler e escrever nos diretórios.</p>
+                            <pre><code>sudo chown -R www-data:www-data /var/www/meusite1.com
+sudo chown -R www-data:www-data /var/www/meusite2.com
+sudo chmod -R 755 /var/www/</code></pre>
+
+                            <h4 class="mt-4">3. Crie um arquivo de configuração</h4>
+                            <p>Crie um arquivo de configuração para o primeiro site.</p>
+                            <pre><code>sudo nano /etc/nginx/sites-available/meusite1.com</code></pre>
+
+                            <h4 class="mt-4">4. Adicione o bloco de servidor (Server Block)</h4>
+                            <p>Este é um exemplo de configuração para um site que utiliza PHP.</p>
+                            <pre><code>server {
+    listen 80;
+    server_name meusite1.com www.meusite1.com;
+    root /var/www/meusite1.com;
+
+    index index.php index.html index.htm;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location ~ \.php$ {
+        include snippets/fastcgi-php.conf;
+        fastcgi_pass unix:/var/run/php/php8.3-fpm.sock; # Verifique sua versão do PHP
+    }
+
+    location ~ /\.ht {
+        deny all;
+    }
+}</code></pre>
+                            <div class="alert alert-info">
+                                <strong>Nota:</strong> Repita os passos 3 e 4 para cada site que desejar configurar (ex: <code>meusite2.com</code>).
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="finalizacao" class="card">
+                        <div class="card-body">
+                            <h2 class="card-title">Passo 3: Ativar, Testar e Reiniciar</h2>
+                            <p>Para ativar os sites, crie links simbólicos dos arquivos de configuração para o diretório <code>sites-enabled</code>.</p>
+                            <pre><code>sudo ln -s /etc/nginx/sites-available/meusite1.com /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/meusite2.com /etc/nginx/sites-enabled/</code></pre>
+                            
+                            <p>Antes de finalizar, verifique se a sintaxe da configuração está correta.</p>
+                            <pre><code>sudo nginx -t</code></pre>
+                            
+                            <p>Se não houver erros, recarregue o serviço NGINX para aplicar as alterações.</p>
+                            <pre><code>sudo systemctl reload nginx</code></pre>
+
+                            <h4 class="mt-4">Teste Local (Opcional)</h4>
+                            <p>Para testar localmente, você pode editar o arquivo <code>hosts</code>.</p>
+                            <pre><code>sudo nano /etc/hosts</code></pre>
+                            <p>Adicione as seguintes linhas:</p>
+                            <pre><code>127.0.0.1 meusite1.com
+127.0.0.1 meusite2.com</code></pre>
+                            <p>Agora você pode acessar <code>http://meusite1.com</code> em seu navegador.</p>
+                        </div>
+                    </section>
+
+                    <section id="logs" class="card">
+                        <div class="card-body">
+                            <h2 class="card-title">Gerenciamento de Logs</h2>
+                            <p>Por padrão, os logs do NGINX são armazenados nos seguintes locais:</p>
+                            <ul class="list-group">
+                                <li class="list-group-item"><strong>Logs de Acesso:</strong> <code>/var/log/nginx/access.log</code></li>
+                                <li class="list-group-item"><strong>Logs de Erro:</strong> <code>/var/log/nginx/error.log</code></li>
+                            </ul>
+                            <p class="mt-3">No Ubuntu, a rotação de logs (log rotation) já é gerenciada automaticamente pelo utilitário <code>logrotate</code>.</p>
+                        </div>
+                    </section>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <footer class="py-4 bg-dark text-white text-center mt-4">
+        <div class="container">
+            <p class="mb-0">O NGINX é uma solução robusta e escalável para servir sites e gerenciar tráfego web.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
